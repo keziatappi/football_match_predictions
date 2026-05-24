@@ -1,0 +1,11 @@
+/web/.env
+/web/node_modules/
+/web/vendor/
+/web/laravel
+/web/storage/*.key
+/web/bootstrap/cache/*
+/ml-service/__pycache__/
+*.pyc
+.idea/
+.vscode/
+.DS_Store
