@@ -14,7 +14,7 @@ class SyncFixtures extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'fixtures:sync {--force : Force sync even if already synced}';
+    protected $signature = 'fixtures:sync {--force : Force sync even if already synced} {--league= : The ID of the league to sync} {--limit=5 : The number of fixtures to process per league} {--demo : Force running in demo/mock mode}';
 
     /**
      * The console command description.
@@ -38,14 +38,19 @@ class SyncFixtures extends Command
     {
         $this->info("Starting API-Football fixtures synchronization...");
 
-        $season = $this->apiService->getSeason();
-        $leagues = $this->apiService->getLeagues();
-
+        $demoMode = $this->option('demo');
         $key = config('services.api_football.key', '');
-        if (empty($key) || $key === 'your_api_key_here') {
-            $this->warn("API-Football Key is not configured in .env. Running in DEMO/MOCK mode...");
+        if ($demoMode || empty($key) || $key === 'your_api_key_here') {
+            $this->warn("Running in DEMO/MOCK mode...");
             $this->runDemoSync();
             return 0;
+        }
+
+        $season = $this->apiService->getSeason();
+        $leagues = $this->apiService->getLeagues();
+        $targetLeague = $this->option('league');
+        if ($targetLeague) {
+            $leagues = [intval($targetLeague)];
         }
 
         $syncedCount = 0;
@@ -78,7 +83,8 @@ class SyncFixtures extends Command
                 return strtotime($a['fixture']['date'] ?? 0) <=> strtotime($b['fixture']['date'] ?? 0);
             });
 
-            $fixtures = array_slice($upcomingFixtures, 0, 5);
+            $limit = intval($this->option('limit') ?? 5);
+            $fixtures = array_slice($upcomingFixtures, 0, $limit);
 
             // Fallback: If no upcoming matches are found (e.g. historical season), get recent completed matches
             if (empty($fixtures)) {
@@ -94,7 +100,7 @@ class SyncFixtures extends Command
                     return strtotime($b['fixture']['date'] ?? 0) <=> strtotime($a['fixture']['date'] ?? 0);
                 });
 
-                $fixtures = array_slice($completedFixtures, 0, 5);
+                $fixtures = array_slice($completedFixtures, 0, $limit);
             }
 
             if (empty($fixtures)) {

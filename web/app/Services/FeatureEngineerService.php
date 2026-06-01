@@ -141,7 +141,7 @@ class FeatureEngineerService
     protected function findTeamInStandings(array $standingsList, int $teamId): ?array
     {
         foreach ($standingsList as $leagueStanding) {
-            $standings = $leagueStanding['standings'] ?? [];
+            $standings = $leagueStanding['standings'] ?? $leagueStanding['league']['standings'] ?? [];
             foreach ($standings as $subStanding) {
                 if (is_array($subStanding)) {
                     foreach ($subStanding as $row) {

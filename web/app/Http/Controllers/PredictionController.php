@@ -51,8 +51,11 @@ class PredictionController extends Controller
     public function sync(): JsonResponse
     {
         try {
-            // Call artisan command programmatically
-            \Illuminate\Support\Facades\Artisan::call('fixtures:sync', ['--force' => true]);
+            // Call artisan command programmatically, limited to 2 fixtures per league to prevent HTTP timeouts
+            \Illuminate\Support\Facades\Artisan::call('fixtures:sync', [
+                '--force' => true,
+                '--limit' => 2,
+            ]);
             $output = \Illuminate\Support\Facades\Artisan::output();
 
             return response()->json([
