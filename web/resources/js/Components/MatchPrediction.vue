@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, h } from 'vue';
 
 const props = defineProps({
     prediction: { type: Object, required: true },
@@ -106,11 +106,7 @@ function drawDonut() {
 onMounted(() => drawDonut());
 watch(() => props.prediction, () => drawDonut(), { deep: true });
 
-// ── Sub-component: Probability Bar ───────────────────────────────
-</script>
-
-<script>
-/** Inline child component for probability bars */
+// ── Sub-component: Probability Bar (render function) ─────────────
 const ProbBar = {
     props: {
         label:     { type: String, required: true },
@@ -119,34 +115,30 @@ const ProbBar = {
         colorTo:   { type: String, required: true },
         isHighest: { type: Boolean, default: false },
     },
-    template: `
-        <div class="flex items-center gap-2">
-            <span
-                class="text-[10px] font-medium w-16 truncate text-right"
-                :class="isHighest ? 'text-white' : 'text-slate-500'"
-            >
-                {{ label }}
-            </span>
-            <div class="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
-                <div
-                    class="h-full rounded-full transition-all duration-1000 ease-out"
-                    :style="{
-                        width: (value * 100) + '%',
-                        background: 'linear-gradient(to right, ' + colorFrom + ', ' + colorTo + ')',
-                    }"
-                />
-            </div>
-            <span
-                class="text-xs font-bold tabular-nums w-10 text-right"
-                :class="isHighest ? 'text-white' : 'text-slate-500'"
-            >
-                {{ (value * 100).toFixed(1) }}%
-            </span>
-        </div>
-    `,
-};
-
-export default {
-    /* Re-export so <script setup> component registration works with the child */
+    setup(props) {
+        return () => h('div', { class: 'flex items-center gap-2' }, [
+            h('span', {
+                class: [
+                    'text-[10px] font-medium w-16 truncate text-right',
+                    props.isHighest ? 'text-white' : 'text-slate-500',
+                ],
+            }, props.label),
+            h('div', { class: 'flex-1 h-2 rounded-full bg-white/5 overflow-hidden' }, [
+                h('div', {
+                    class: 'h-full rounded-full transition-all duration-1000 ease-out',
+                    style: {
+                        width: (props.value * 100) + '%',
+                        background: `linear-gradient(to right, ${props.colorFrom}, ${props.colorTo})`,
+                    },
+                }),
+            ]),
+            h('span', {
+                class: [
+                    'text-xs font-bold tabular-nums w-10 text-right',
+                    props.isHighest ? 'text-white' : 'text-slate-500',
+                ],
+            }, (props.value * 100).toFixed(1) + '%'),
+        ]);
+    },
 };
 </script>

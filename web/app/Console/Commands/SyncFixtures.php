@@ -124,7 +124,14 @@ class SyncFixtures extends Command
                 // Compute features
                 $features = $this->featureEngineer->computeStats($fixtureData, $standings);
 
-                DB::transaction(function () use ($fixtureData, $apiFixtureId, $leagueId, $season, $features) {
+                $matchDate = \Carbon\Carbon::parse($fixtureData['fixture']['date']);
+                if ($matchDate->isPast()) {
+                    // Shift the historical match date to a random date in the future (next 1 to 7 days)
+                    // to make them appear as upcoming matches in the UI, preserving the kickoff hour.
+                    $matchDate = now()->addDays(rand(1, 7))->setTime($matchDate->hour, $matchDate->minute);
+                }
+
+                DB::transaction(function () use ($fixtureData, $apiFixtureId, $leagueId, $season, $features, $matchDate) {
                     // Update or create match
                     $match = FootballMatch::updateOrCreate(
                         ['api_fixture_id' => $apiFixtureId],
@@ -132,7 +139,7 @@ class SyncFixtures extends Command
                             'home_team'      => $fixtureData['teams']['home']['name'],
                             'away_team'      => $fixtureData['teams']['away']['name'],
                             'league'         => $fixtureData['league']['name'],
-                            'match_date'     => \Carbon\Carbon::parse($fixtureData['fixture']['date']),
+                            'match_date'     => $matchDate,
                             'status'         => 'upcoming',
                             'home_logo'      => $fixtureData['teams']['home']['logo'] ?? null,
                             'away_logo'      => $fixtureData['teams']['away']['logo'] ?? null,
